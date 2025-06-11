@@ -10,8 +10,9 @@ import ForcastingScenarioIDP from "./PopUp/ForcastingScenarioIDP";
 
 export default function ForcastingScenario() {
 
+    const [forecastData, setForecastData] = useState([]);
     const [toggle, setToggle] = useState(null);
-    const [selectedRowIndex, setSelectedRowIndex] = useState(null);
+    const [selectedRow, setSelectedRow] = useState({ groupName: null, index: null });
     const [idpVisible, setIdpVisible] = useState(false);
     const [topToggle, setTopToggle] = useState(false);
 
@@ -19,22 +20,22 @@ export default function ForcastingScenario() {
     const popupRef = useRef(null);
     const dropdownRef = useRef(null);
 
-
-
     const handelToggle = (tab) => {
         setToggle((prevTab) => (prevTab === tab ? null : tab))
     }
 
-    const handleDoubleClick = (index) => {
-        setSelectedRowIndex(index);
-        setIdpVisible(false); // Reset any open popup on new selection
+    const handleDoubleClick = (groupName, index) => {
+        setSelectedRow({ groupName, index });
+        setIdpVisible(false);
     };
 
-    const handleRightClick = (e, index) => {
+    const handleRightClick = (e, groupName, index) => {
         e.preventDefault();
-        setSelectedRowIndex(index);
-        setIdpVisible(true);
+        if (selectedRow.groupName === groupName && selectedRow.index === index) {
+            setIdpVisible(true);
+        }
     };
+
 
     useEffect(() => {
         localStorage.setItem('showSaveClose', 'true');
@@ -43,8 +44,6 @@ export default function ForcastingScenario() {
             localStorage.removeItem('showSaveClose');
         };
     }, []);
-
-
 
     useEffect(() => {
 
@@ -58,8 +57,8 @@ export default function ForcastingScenario() {
                 setIdpVisible(false);
             }
 
-            if (selectedRowIndex !== null && outsideTable) {
-                setSelectedRowIndex(null); // Clear blue background on outside click
+            if (selectedRow !== null && outsideTable) {
+                setSelectedRow({ groupName: null, index: null }); // Clear blue background on outside click
             }
 
             if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -72,8 +71,36 @@ export default function ForcastingScenario() {
             document.removeEventListener("mousedown", handleClickOutside);
         };
 
-    }, [idpVisible, selectedRowIndex]);
+    }, [idpVisible, selectedRow]);
 
+
+    //Fetch the Forcasting Group data
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const response = await fetch('http://localhost:5000/api/forecasting/forecasting-scenarios');
+
+                // Check if response is OK (status code 200–299)
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+
+                // Check if 'data' key exists and is an array
+                if (!result || !Array.isArray(result.data)) {
+                    throw new Error('Invalid data format received from server.');
+                }
+
+                setForecastData(result.data);
+            } catch (err) {
+                console.error('Error fetching forecasting data:', err);
+                alert(`Failed to fetch data: ${err.message}`);
+            }
+        };
+
+        fetchData();
+    }, []);
 
 
 
@@ -86,12 +113,6 @@ export default function ForcastingScenario() {
                         <h1 className="font-semibold">Forecasting Scenarios</h1>
                     </div>
                     <div className="bg-gray-100 shadow-md flex-grow flex flex-col">
-                        {/* <div className="flex items-center border-b border-gray-200">
-                            <div className="flex items-center justify-between p-1 m-2 w-3/6 md:w-1/6 text-sm font-semibold bg-white">
-                                Forecast Group Code
-
-                            </div>
-                        </div> */}
                         <div className="flex items-center justify-between p-1 m-2 w-3/6 md:w-1/6 text-sm font-semibold bg-white" >
                             Forecast Group Code
                             <span className="flex items-center gap-1">
@@ -167,126 +188,54 @@ export default function ForcastingScenario() {
                                 </thead>
 
                                 <tbody>
-                                    <tr className={`${toggle ? 'bg-blue-600 text-white' : ''} text-blue-600`}>
-                                        <td
-                                            colSpan="11"
-                                            className="px-2 pt-5  text-sm border-2 border-gray-200 font-semibold"
-                                        >
-                                            <span className="flex items-center gap-1"
-                                                onClick={() => handelToggle('TWAL.GEMMIRD.DGQXXX_(1)')}>
-                                                {toggle === 'TWAL.GEMMIRD.DGQXXX_(1)' ?
-                                                    (<FiPlusSquare />) : (<FaRegSquareMinus />)}
-                                                Forecast Group Code : TWAL.GEMMIRD.DGQXXX_(1)
-                                            </span>
-                                        </td>
-                                    </tr>
+                                    {forecastData.map((item) => (
+                                        <React.Fragment key={item._id}>
+                                            <tr className={`${toggle === item.name ? 'bg-blue-600 text-white' : ''} text-blue-600`}>
+                                                <td
+                                                    colSpan="11"
+                                                    className="px-2 pt-5  text-sm border-2 border-gray-200 font-semibold"
+                                                >
+                                                    <span className="flex items-center gap-1"
+                                                        onClick={() => handelToggle(item.name)}>
+                                                        {toggle === item.name ?
+                                                            (<FiPlusSquare />) : (<FaRegSquareMinus />)}
+                                                        Forecast Group Code : {item.name}
+                                                    </span>
+                                                </td>
+                                            </tr>
 
-                                    {toggle === 'TWAL.GEMMIRD.DGQXXX_(1)' && (
-                                        <>
-                                            <tr className={`border-b border-gray-200 ${selectedRowIndex === 0 ? 'bg-blue-500 text-white' : 'bg-yellow-100'}`}
-                                                onDoubleClick={() => handleDoubleClick(0)}
-                                                onContextMenu={(e) => handleRightClick(e, 0)}>
-                                                <td className="px-2 py-1 text-sm border-2 border-gray-200">
-                                                    EMEA Solutio…
-                                                </td>
-                                                <td className="px-2 py-1 text-sm border-2 border-gray-200 text-center">
-                                                    <i className="fas fa-check text-green-500"></i>
-                                                </td>
-                                                <td className="px-2 py-1 text-sm border-2 border-gray-200">
-                                                    EMEA Solutio…
-                                                </td>
-                                                <td className="px-2 py-1 text-sm border-2 border-gray-200">
-                                                    EMEA Solutio…
-                                                </td>
-                                                <td className="px-2 py-1 text-sm border-2 border-gray-200">
-                                                    User-supplied growth rat…
-                                                </td>
-                                                <td className="px-2 py-1 text-sm border-2 border-gray-200">
-                                                    Service level
-                                                </td>
-                                                <td className="px-2 py-1 text-sm border-2 border-gray-200">
-                                                    Average delay
-                                                </td>
-                                                <td className="px-2 py-1 text-sm border-2 border-gray-200">
-                                                    FWEEK
-                                                </td>
-                                                <td className="px-2 py-1 text-sm border-2 border-gray-200">
-                                                    BRIAN_TAN
-                                                </td>
-                                                <td className="px-2 py-1 text-sm border-2 border-gray-200">
-                                                    7/08/2024
-                                                </td>
-                                            </tr>
-                                            <tr className={`border-b border-gray-200 ${selectedRowIndex === 1 ? 'bg-blue-500 text-white' : ''}`}
-                                                onDoubleClick={() => handleDoubleClick(1)}
-                                                onContextMenu={(e) => handleRightClick(e, 1)}>
-                                                <td className="px-2 py-1 text-sm border-2 border-gray-200">
-                                                    EMEA Solutio…
-                                                </td>
-                                                <td className="px-2 py-1 text-sm border-2 border-gray-200 text-center">
-                                                    <i className="fas fa-check text-green-500"></i>
-                                                </td>
-                                                <td className="px-2 py-1 text-sm border-2 border-gray-200">
-                                                    HIST
-                                                </td>
-                                                <td className="px-2 py-1 text-sm border-2 border-gray-200">
-                                                    Historical Growth
-                                                </td>
-                                                <td className="px-2 py-1 text-sm border-2 border-gray-200">
-                                                    Historical growth rate
-                                                </td>
-                                                <td className="px-2 py-1 text-sm border-2 border-gray-200">
-                                                    Average delay
-                                                </td>
-                                                <td className="px-2 py-1 text-sm border-2 border-gray-200">
-                                                    Average delay
-                                                </td>
-                                                <td className="px-2 py-1 text-sm border-2 border-gray-200">
-                                                    MNTHLY
-                                                </td>
-                                                <td className="px-2 py-1 text-sm border-2 border-gray-200">
-                                                    AXEL_MYLES
-                                                </td>
-                                                <td className="px-2 py-1 text-sm border-2 border-gray-200">
-                                                    9/28/2024
-                                                </td>
-                                            </tr>
-                                            <tr className={`border-b border-gray-200 ${selectedRowIndex === 2 ? 'bg-blue-500 text-white' : 'bg-yellow-100'}`}
-                                                onDoubleClick={() => handleDoubleClick(2)}
-                                                onContextMenu={(e) => handleRightClick(e, 2)}>
-                                                <td className="px-2 py-1 text-sm border-2 border-gray-200">
-                                                    EMEA Solutio…
-                                                </td>
-                                                <td className="px-2 py-1 text-sm border-2 border-gray-200 text-center">
-                                                    <FaCheck className="text-green-500 w-4 h-4" />
-                                                </td>
-                                                <td className="px-2 py-1 text-sm border-2 border-gray-200">
-                                                    WEEKLY
-                                                </td>
-                                                <td className="px-2 py-1 text-sm border-2 border-gray-200">
-                                                    Weekly Forecast
-                                                </td>
-                                                <td className="px-2 py-1 text-sm border-2 border-gray-200">
-                                                    User-supplied fiscal volume
-                                                </td>
-                                                <td className="px-2 py-1 text-sm border-2 border-gray-200">
-                                                    Service level
-                                                </td>
-                                                <td className="px-2 py-1 text-sm border-2 border-gray-200">
-                                                    Service level
-                                                </td>
-                                                <td className="px-2 py-1 text-sm border-2 border-gray-200">
-                                                    FWEEK
-                                                </td>
-                                                <td className="px-2 py-1 text-sm border-2 border-gray-200">
-                                                    CHETAN_P…
-                                                </td>
-                                                <td className="px-2 py-1 text-sm border-2 border-gray-200">
-                                                    5/15/2025
-                                                </td>
-                                            </tr>
-                                        </>
-                                    )}
+                                            {toggle === item.name && item.groups.map((scenario, index) => {
+                                                const isSelected =
+                                                    selectedRow.groupName === item.name && selectedRow.index === index;
+                                                return (
+                                                    <tr key={scenario._id} className={`border-b border-gray-200 
+                                                    ${isSelected ? 'bg-blue-500 text-white' : 'bg-yellow-100'}`}
+                                                        onDoubleClick={() => handleDoubleClick(item.name, index)}
+                                                        onContextMenu={(e) => handleRightClick(e, item.name, index)}
+                                                    >
+                                                        <td className="px-2 py-1 text-sm border-2 border-gray-200">
+                                                            {scenario.ForecastGroup_Description}
+                                                        </td>
+                                                        <td className="px-2 py-1 text-sm border-2 border-gray-200 text-center">
+                                                            {scenario.Default ? (
+                                                                <FaCheck className="text-green-500 w-4 h-4 mx-auto" />
+                                                            ) : (
+                                                                ''
+                                                            )}
+                                                        </td>
+                                                        <td className="px-2 py-1 text-sm border-2 border-gray-200">{scenario.Code}</td>
+                                                        <td className="px-2 py-1 text-sm border-2 border-gray-200">{scenario.Scenario_Description}</td>
+                                                        <td className="px-2 py-1 text-sm border-2 border-gray-200">{scenario.Forecasting_Basis}</td>
+                                                        <td className="px-2 py-1 text-sm border-2 border-gray-200">{scenario.Staffing_Basis}</td>
+                                                        <td className="px-2 py-1 text-sm border-2 border-gray-200">{scenario.Multi_Channel_Staffing_Basis}</td>
+                                                        <td className="px-2 py-1 text-sm border-2 border-gray-200">{scenario.Fiscal_Calendar}</td>
+                                                        <td className="px-2 py-1 text-sm border-2 border-gray-200">{scenario.Updated_By}</td>
+                                                        <td className="px-2 py-1 text-sm border-2 border-gray-200">{scenario.Updated_On}</td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </React.Fragment>
+                                    ))}
                                 </tbody>
                             </table>
                         </div>
@@ -305,7 +254,7 @@ export default function ForcastingScenario() {
                     <div className='flex items-center justify-between py-1 bg-blue-500'>
                         <div className=" text-gray-600 px-2 flex items-center gap-2">
                             <p className='text-sm text-white font-semibold'>
-                                {selectedRowIndex !== null ? `1 of 1 items Selected` : '0 of 1 items Selected'}
+                                {selectedRow !== null ? `1 of 1 items Selected` : '0 of 1 items Selected'}
                             </p>
                         </div>
                     </div>
