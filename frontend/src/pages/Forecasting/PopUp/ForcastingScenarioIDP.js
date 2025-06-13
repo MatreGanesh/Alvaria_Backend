@@ -5,10 +5,30 @@ import { FaSitemap } from "react-icons/fa";
 import { TbSitemap } from "react-icons/tb";
 import { GrCopy } from "react-icons/gr";
 import { FaRegEdit } from "react-icons/fa";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { useEffect } from 'react';
 
 
-export default function ForcastingScenarioIDP() {
+export default function ForcastingScenarioIDP({ rowUserId, groupName, user_Id }) {
+
+
+    const navigate = useNavigate();
+
+    // Store rowUserId in localStorage on component mount
+    useEffect(() => {
+        if (rowUserId && groupName && user_Id) {
+            localStorage.setItem('user', rowUserId);
+            localStorage.setItem('forecastingGroupName', groupName);
+            localStorage.setItem('selectedScenarioId', user_Id);
+        }
+
+    }, [rowUserId, groupName, user_Id]);
+
+    // Navigation handler
+    const handelNavigate = () => {
+        navigate('/forecasting-forcasting-scenario/Fiscal_Volumes');
+    };
+
     return (
         <div className="z-10 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2  shadow-md shadow-black">
             {/* <TrackingEdit /> */}
@@ -144,7 +164,7 @@ export default function ForcastingScenarioIDP() {
                             </button>
                         </li>
                         <li className=" group hover:bg-yellow-200 hover:border border-black">
-                            <Link to={'/forecasting-forcasting-scenario/Fiscal_Volumes'} className='flex items-center'>
+                            <span className='flex items-center' onClick={handelNavigate}>
                                 <button className='absolute left-[7px] flex items-center justify-center'>
                                     <TbSitemap className='w-4 h-4 rotate-90 text-blue-500' />
                                 </button>
@@ -157,7 +177,7 @@ export default function ForcastingScenarioIDP() {
 
                                     </span>
                                 </button>
-                            </Link>
+                            </span>
                         </li>
                         <li className="flex items-center group hover:bg-yellow-200 hover:border border-black">
                             <button className='absolute left-[7px] flex items-center justify-center'>

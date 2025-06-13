@@ -1,13 +1,71 @@
 import React from 'react'
+import { useEffect } from 'react'
+import { useState } from 'react'
 import { BsFillHexagonFill } from 'react-icons/bs'
 import { FiMinus } from 'react-icons/fi'
 import { IoCloseSharp } from 'react-icons/io5'
 import { MdOutlineCropSquare } from 'react-icons/md'
 import { useNavigate } from 'react-router-dom'
 
-export default function FiscalVolumesSelect({ setVisible }) {
+export default function FiscalVolumesSelect({ setVisible, refreshFiscalVolumes }) {
 
+    const [fiscalPeriods, setFiscalPeriods] = useState([]);
     const navigate = useNavigate();
+
+    //Fetching user name is stored in localstorage
+    const userId = localStorage.getItem("user");
+
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/forecasting/forecasting-scenarios/get-selected-fiscal-periods?userId=${userId}`);
+                if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
+                const result = await response.json();
+                // Now handle nested response
+                const nestedPeriods = result.data.flatMap(item => item.periods);
+                setFiscalPeriods(nestedPeriods); // store flat list for rendering
+            } catch (err) {
+                console.error('Error fetching fiscal periods:', err);
+            }
+        };
+        fetchData();
+    }, [userId]);
+
+    const handleSave = async () => {
+        const forecastingGroupName = localStorage.getItem("forecastingGroupName");
+        const scenarioId = localStorage.getItem("selectedScenarioId");
+
+        if (!userId || !forecastingGroupName || !scenarioId) {
+            alert("User, group name or scenario ID missing from localStorage.");
+            return;
+        }
+
+        try {
+            const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/forecasting/forecasting-scenarios/send-all-fiscal-volumes`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    userId,
+                    forecastingGroupName,
+                    scenarioId
+                })
+            });
+
+            const result = await res.json();
+
+            if (result.success) {
+                alert("Fiscal volumes saved successfully.");
+                refreshFiscalVolumes();
+                setVisible(false);
+            } else {
+                alert("Error: " + result.message);
+            }
+        } catch (err) {
+            console.error("Failed to save:", err);
+            alert("Save failed.");
+        }
+    };
 
     return (
 
@@ -37,84 +95,27 @@ export default function FiscalVolumesSelect({ setVisible }) {
                     <div className='bg-gray-100 p-2 shadow-[inset_.2px_.5px_4px_.1px_rgba(0,0,0,0.03)] shadow-current'>
                         <div className='border p-2 space-y-2 shadow-gray-700 shadow-sm'>
                             <fieldset className="space-y-2 border-[1.5px] border-gray-400 p-2">
-                                <legend className="block text-sm font-semibold text-gray-700" for="lookup">
+                                <legend className="block text-sm font-semibold text-gray-700" htmlFor="lookup">
                                     Lookup
                                 </legend>
-                                <input autocomplete="off" className="min-w-[450px] border border-gray-300 rounded py-2 px-2 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500" id="lookup" spellcheck="false" type="text" />
+                                <input autoComplete="off" className="min-w-[450px] border border-gray-300 rounded py-2 px-2 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500" id="lookup" spellCheck="false" type="text" />
                             </fieldset>
 
                             <fieldset className="border-[1.5px] border-gray-400 p-2">
-                                <legend className="block text-sm font-semibold text-gray-700" for="selected-list">
+                                <legend className="block text-sm font-semibold text-gray-700" htmlFor="selected-list">
                                     Selected (239)
                                 </legend>
                                 <div className="flex">
                                     <select aria-multiselectable="true" className="w-[70%] border border-gray-300 rounded text-sm text-gray-950 p-1 resize-none space-y-1 overflow-y-auto" id="selected-list" multiple="" size="15">
-                                        <option>
-                                            FY27WK04 (2/21/2026 to 2/27/2026)
-                                        </option>
-                                        <option>
-                                            FY27WK05 (2/28/2026 to 3/6/2026)
-                                        </option>
-                                        <option>
-                                            FY27WK06 (3/7/2026 to 3/13/2026)
-                                        </option>
-                                        <option>
-                                            FY27WK07 (3/14/2026 to 3/20/2026)
-                                        </option>
-                                        <option>
-                                            FY27WK08 (3/21/2026 to 3/27/2026)
-                                        </option>
-                                        <option>
-                                            FY27WK09 (3/28/2026 to 4/3/2026)
-                                        </option>
-                                        <option>
-                                            FY27WK10 (4/4/2026 to 4/10/2026)
-                                        </option>
-                                        <option>
-                                            FY27WK11 (4/11/2026 to 4/17/2026)
-                                        </option>
-                                        <option>
-                                            FY27WK12 (4/18/2026 to 4/24/2026)
-                                        </option>
-                                        <option>
-                                            FY27WK13 (4/25/2026 to 5/1/2026)
-                                        </option>
-                                        <option>
-                                            FY27WK14 (5/2/2026 to 5/8/2026)
-                                        </option>
-                                        <option>
-                                            FY27WK15 (5/9/2026 to 5/15/2026)
-                                        </option>
-                                        <option>
-                                            FY27WK16 (5/16/2026 to 5/22/2026)
-                                        </option>
-                                        <option>
-                                            FY27WK17 (5/23/2026 to 5/29/2026)
-                                        </option>
-                                        <option>
-                                            FY27WK18 (5/30/2026 to 6/5/2026)
-                                        </option>
-                                        <option>
-                                            FY27WK19 (6/6/2026 to 6/12/2026)
-                                        </option>
-                                        <option>
-                                            FY27WK20 (6/13/2026 to 6/19/2026)
-                                        </option>
-                                        <option>
-                                            FY27WK21 (6/20/2026 to 6/26/2026)
-                                        </option>
-                                        <option>
-                                            FY27WK22 (6/27/2026 to 7/3/2026)
-                                        </option>
-                                        <option>
-                                            FY27WK23 (7/4/2026 to 7/10/2026)
-                                        </option>
-                                        <option>
-                                            FY27WK24 (7/11/2026 to 7/17/2026)
-                                        </option>
-                                        <option>
-                                            FY27WK25 (7/18/2026 to 7/24/2026)
-                                        </option>
+                                        {fiscalPeriods.map((items, index) => (
+
+                                            <React.Fragment key={items._id || index}>
+                                                <option>
+                                                    ({items.from} to {items.to})
+                                                </option>
+                                            </React.Fragment>
+                                        ))
+                                        }
                                     </select>
 
                                     <div className="flex flex-col items-center justify-between space-y-2 w-[30%]">
@@ -148,7 +149,8 @@ export default function FiscalVolumesSelect({ setVisible }) {
                     </div>
 
                     <div className="flex justify-end space-x-2 border-t bg-gray-100 border-gray-300 px-3 py-2">
-                        <button className="w-20 h-8 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 focus:outline-none" type="button">
+                        <button className="w-20 h-8 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 focus:outline-none" type="button"
+                            onClick={handleSave}>
                             OK
                         </button>
                         <button className="w-20 h-8 border border-gray-300 rounded text-sm text-gray-700 hover:bg-gray-200 focus:outline-none" type="button"
@@ -166,3 +168,4 @@ export default function FiscalVolumesSelect({ setVisible }) {
 
     )
 }
+

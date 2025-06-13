@@ -16,6 +16,15 @@ export const StateProvider = ({ children }) => {
     const [toggleSideBar, setToggleSideBar] = useState(false);
     const [ewfmData, setEwfmData] = useState(null);
     const [timeZone, setTimeZone] = useState({ label: '', bias: '0' });
+    const [triggerSave, setTriggerSave] = useState(false);
+
+    const requestSave = () => {
+        setTriggerSave(true);
+    };
+
+    const resetSave = () => {
+        setTriggerSave(false);
+    };
 
 
     //For Navbar Day, Week and Month
@@ -30,7 +39,7 @@ export const StateProvider = ({ children }) => {
             showDWM, setShowDWM, handleTabClick, showDateWeekMonth, setShowDateWeekMonth,
             selectedDate, setSelectedDate, selectedEmployee, setSelectedEmployee,
             toggleSideBar, setToggleSideBar, ewfmData, setEwfmData, timeZone, setTimeZone,
-            authToken, setAuthToken
+            authToken, setAuthToken, triggerSave, requestSave, resetSave
         }}>
             {children}
         </stateContext.Provider>

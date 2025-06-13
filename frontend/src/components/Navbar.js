@@ -145,7 +145,7 @@ export default function Navbar() {
                 placeholder="(UTC+00:00) Dublin, Edinburgh, Lisbon, London"
                 className="w-full min-w-[500px] py-1 px-3 border-2 border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400"
                 aria-label="Time zone input"
-                value={timeZone.label}
+                defaultValue={timeZone.label}
               />
               <div
                 className="absolute top-1/2 right-0 transform -translate-y-1/2 border-2 border-gray-400 px-[5px] py-[6px] cursor-pointer"

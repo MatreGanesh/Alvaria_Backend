@@ -11,10 +11,13 @@ import ForcastingScenarioIDP from "./PopUp/ForcastingScenarioIDP";
 export default function ForcastingScenario() {
 
     const [forecastData, setForecastData] = useState([]);
-    const [toggle, setToggle] = useState(null);
+    const [toggle, setToggle] = useState(true);
     const [selectedRow, setSelectedRow] = useState({ groupName: null, index: null });
     const [idpVisible, setIdpVisible] = useState(false);
     const [topToggle, setTopToggle] = useState(false);
+    const [rowUserId, setRowUserId] = useState(null)
+    const [groupName, setGroupName] = useState(null)
+    const [user_Id, setUser_Id] = useState(null)
 
     const tableRef = useRef(null);
     const popupRef = useRef(null);
@@ -29,10 +32,13 @@ export default function ForcastingScenario() {
         setIdpVisible(false);
     };
 
-    const handleRightClick = (e, groupName, index) => {
+    const handleRightClick = (e, _id, groupName, index, Updated_By) => {
         e.preventDefault();
         if (selectedRow.groupName === groupName && selectedRow.index === index) {
             setIdpVisible(true);
+            setUser_Id(_id)
+            setGroupName(groupName)
+            setRowUserId(Updated_By);
         }
     };
 
@@ -78,7 +84,8 @@ export default function ForcastingScenario() {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const response = await fetch('http://localhost:5000/api/forecasting/forecasting-scenarios');
+                const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/forecasting/get-forecasting-scenarios-group`);
+
 
                 // Check if response is OK (status code 200–299)
                 if (!response.ok) {
@@ -103,6 +110,11 @@ export default function ForcastingScenario() {
     }, []);
 
 
+    useEffect(() => {
+        localStorage.removeItem('user');
+        localStorage.removeItem('forecastingGroupName');
+        localStorage.removeItem('selectedScenarioId');
+    }, [])
 
 
     return (
@@ -135,6 +147,7 @@ export default function ForcastingScenario() {
                         </div>
                         <div className="overflow-x-auto flex-grow">
                             <table ref={tableRef} className="min-w-full bg-white">
+
                                 <thead className="bg-white border-b border-gray-200">
                                     <tr>
                                         <th className="px-2 text-left text-sm font-semibold border-x-2 border-gray-200">
@@ -188,7 +201,13 @@ export default function ForcastingScenario() {
                                 </thead>
 
                                 <tbody>
-                                    {forecastData.map((item) => (
+                                    {forecastData.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={10} className="text-center text-gray-500 font-semibold py-8">
+                                                Data is not available
+                                            </td>
+                                        </tr>
+                                    ) : (forecastData.map((item) => (
                                         <React.Fragment key={item._id}>
                                             <tr className={`${toggle === item.name ? 'bg-blue-600 text-white' : ''} text-blue-600`}>
                                                 <td
@@ -204,39 +223,41 @@ export default function ForcastingScenario() {
                                                 </td>
                                             </tr>
 
-                                            {toggle === item.name && item.groups.map((scenario, index) => {
-                                                const isSelected =
-                                                    selectedRow.groupName === item.name && selectedRow.index === index;
-                                                return (
-                                                    <tr key={scenario._id} className={`border-b border-gray-200 
+                                            {
+                                                toggle === item.name && item.groups.map((scenario, index) => {
+                                                    const isSelected =
+                                                        selectedRow.groupName === item.name && selectedRow.index === index;
+                                                    return (
+                                                        <tr key={scenario._id} className={`border-b border-gray-200 
                                                     ${isSelected ? 'bg-blue-500 text-white' : 'bg-yellow-100'}`}
-                                                        onDoubleClick={() => handleDoubleClick(item.name, index)}
-                                                        onContextMenu={(e) => handleRightClick(e, item.name, index)}
-                                                    >
-                                                        <td className="px-2 py-1 text-sm border-2 border-gray-200">
-                                                            {scenario.ForecastGroup_Description}
-                                                        </td>
-                                                        <td className="px-2 py-1 text-sm border-2 border-gray-200 text-center">
-                                                            {scenario.Default ? (
-                                                                <FaCheck className="text-green-500 w-4 h-4 mx-auto" />
-                                                            ) : (
-                                                                ''
-                                                            )}
-                                                        </td>
-                                                        <td className="px-2 py-1 text-sm border-2 border-gray-200">{scenario.Code}</td>
-                                                        <td className="px-2 py-1 text-sm border-2 border-gray-200">{scenario.Scenario_Description}</td>
-                                                        <td className="px-2 py-1 text-sm border-2 border-gray-200">{scenario.Forecasting_Basis}</td>
-                                                        <td className="px-2 py-1 text-sm border-2 border-gray-200">{scenario.Staffing_Basis}</td>
-                                                        <td className="px-2 py-1 text-sm border-2 border-gray-200">{scenario.Multi_Channel_Staffing_Basis}</td>
-                                                        <td className="px-2 py-1 text-sm border-2 border-gray-200">{scenario.Fiscal_Calendar}</td>
-                                                        <td className="px-2 py-1 text-sm border-2 border-gray-200">{scenario.Updated_By}</td>
-                                                        <td className="px-2 py-1 text-sm border-2 border-gray-200">{scenario.Updated_On}</td>
-                                                    </tr>
-                                                );
-                                            })}
+                                                            onDoubleClick={() => handleDoubleClick(item.name, index)}
+                                                            onContextMenu={(e) => handleRightClick(e, item._id, item.name, index, scenario.Updated_By,)}
+                                                        >
+                                                            <td className="px-2 py-1 text-sm border-2 border-gray-200">
+                                                                {scenario.ForecastGroup_Description}
+                                                            </td>
+                                                            <td className="px-2 py-1 text-sm border-2 border-gray-200 text-center">
+                                                                {scenario.Default ? (
+                                                                    <FaCheck className="text-green-500 w-4 h-4 mx-auto" />
+                                                                ) : (
+                                                                    ''
+                                                                )}
+                                                            </td>
+                                                            <td className="px-2 py-1 text-sm border-2 border-gray-200">{scenario.Code}</td>
+                                                            <td className="px-2 py-1 text-sm border-2 border-gray-200">{scenario.Scenario_Description}</td>
+                                                            <td className="px-2 py-1 text-sm border-2 border-gray-200">{scenario.Forecasting_Basis}</td>
+                                                            <td className="px-2 py-1 text-sm border-2 border-gray-200">{scenario.Staffing_Basis}</td>
+                                                            <td className="px-2 py-1 text-sm border-2 border-gray-200">{scenario.Multi_Channel_Staffing_Basis}</td>
+                                                            <td className="px-2 py-1 text-sm border-2 border-gray-200">{scenario.Fiscal_Calendar}</td>
+                                                            <td className="px-2 py-1 text-sm border-2 border-gray-200">{scenario.Updated_By}</td>
+                                                            <td className="px-2 py-1 text-sm border-2 border-gray-200">{scenario.Updated_On}</td>
+                                                        </tr>
+                                                    );
+                                                })}
                                         </React.Fragment>
-                                    ))}
+                                    )))}
                                 </tbody>
+
                             </table>
                         </div>
                     </div>
@@ -259,9 +280,10 @@ export default function ForcastingScenario() {
                         </div>
                     </div>
                 </div>
+
                 {idpVisible && (
                     <div ref={popupRef}>
-                        <ForcastingScenarioIDP />
+                        <ForcastingScenarioIDP rowUserId={rowUserId} groupName={groupName} user_Id={user_Id} />
                     </div>
                 )}
 
