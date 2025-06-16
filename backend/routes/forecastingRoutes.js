@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { createForecastingGroup, getAllForecastingScenarios, deleteForecastingScenarioByName,
     createFiscalPeriods, sendSelectedPeriods, getSelectedPeriods, saveFiscalVolumesToScenario,
-    getUserFiscalVolumes
+    getUserFiscalVolumes, updateSuppliedVolumes
 } = require('../controller/forecastingController');
 
 // POST create new forecasting scenario
@@ -33,6 +33,9 @@ router.post('/forecasting-scenarios/send-all-fiscal-volumes', saveFiscalVolumesT
 
 // GET /forecasting/fiscal-volumes?userId=RAJ_KUMAR
 router.get('/forecasting-scenarios/get-fiscal-volumes', getUserFiscalVolumes);
+
+
+router.post('/forecasting-scenarios/update-supplied-volumes', updateSuppliedVolumes);
 
 
 module.exports = router;

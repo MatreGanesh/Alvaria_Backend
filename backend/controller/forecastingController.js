@@ -319,11 +319,58 @@ const getUserFiscalVolumes = async (req, res) => {
 };
 
 
+const updateSuppliedVolumes = async (req, res) => {
+    try {
+        const { userId, volumes } = req.body;
+
+        if (!userId || !Array.isArray(volumes)) {
+            return res.status(400).json({ success: false, message: "Missing or invalid data" });
+        }
+
+        const scenarios = await ForecastingScenario.find();
+
+        let updated = false;
+
+        for (const scenario of scenarios) {
+            for (const group of scenario.groups) {
+                if (group.Updated_By?.trim().toLowerCase() === userId.trim().toLowerCase()) {
+                    group.FiscalVolumes.forEach(fv => {
+                        if (fv.userId === userId) {
+                            // Update supplied_volume where matching start/stop dates
+                            fv.periods.forEach(period => {
+                                const match = volumes.find(v => v.start_date === period.start_date && v.stop_date === period.stop_date);
+                                if (match) {
+                                    period.supplied_volume = match.supplied_volume;
+                                }
+                            });
+                            updated = true;
+                        }
+                    });
+                }
+            }
+
+            if (updated) {
+                await scenario.save();
+            }
+        }
+
+        if (!updated) {
+            return res.status(404).json({ success: false, message: "No matching scenario found." });
+        }
+
+        return res.status(200).json({ success: true, message: "Supplied volumes updated." });
+
+    } catch (error) {
+        console.error("Error updating supplied volumes:", error);
+        return res.status(500).json({ success: false, message: "Server error", error: error.message });
+    }
+};
+
 
 
 
 module.exports = {
     createForecastingGroup, getAllForecastingScenarios, deleteForecastingScenarioByName,
     createFiscalPeriods, sendSelectedPeriods, getSelectedPeriods, saveFiscalVolumesToScenario,
-    getUserFiscalVolumes
+    getUserFiscalVolumes, updateSuppliedVolumes
 };

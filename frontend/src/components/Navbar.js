@@ -28,7 +28,7 @@ export default function Navbar() {
   const [showSaveClose, setShowSaveClose] = useState(false);
 
   const { showDWM, handleTabClick, showDateWeekMonth, toggleSideBar, setToggleSideBar,
-    timeZone, setTimeZone
+    timeZone, requestSave
   } = useStateContext();
 
   const handleBack = () => {
@@ -75,7 +75,12 @@ export default function Navbar() {
           <ul className='flex items-center font-semibold text-sm gap-3 py-1 px-4'>
 
             {showSaveClose && (
-              <li className='cursor-pointer flex items-center gap-1 hover:text-blue-700'>
+              <li
+                className='cursor-pointer flex items-center gap-1 hover:text-blue-700'
+                onClick={() => {
+                  requestSave(); // trigger global save flag
+                }}
+              >
                 <IoIosSave className='w-5 h-5 text-blue-500' /> Save & Close
               </li>
             )}

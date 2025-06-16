@@ -1,14 +1,13 @@
-
-import React, { useEffect, useState } from 'react'
-import FiscalVolumesSelect from './FiscalVolumesSelect'
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import FiscalVolumesSelect from './FiscalVolumesSelect';
+import { useStateContext } from '../../../StateContext';
 
 export default function FiscalVolumes() {
-
-
     const [isVisible, setVisible] = useState(false);
-    const [FiscalVolumes, setFiscalVolums] = useState([]);
+    const [fiscalVolumes, setFiscalVolumes] = useState([]);
     const navigate = useNavigate();
+    const { triggerSave, resetSave } = useStateContext();
 
     useEffect(() => {
         localStorage.setItem('showSaveClose', 'true');
@@ -17,12 +16,11 @@ export default function FiscalVolumes() {
         };
     }, []);
 
-    // 🔁 Centralized function to fetch fiscal volumes
     const fetchFiscalVolumes = async () => {
         try {
-            const currentUser = localStorage.getItem('user');
+            const userId = localStorage.getItem('user');
             const response = await fetch(
-                `${process.env.REACT_APP_API_BASE_URL}/forecasting/forecasting-scenarios/get-fiscal-volumes?userId=${currentUser}`
+                `${process.env.REACT_APP_API_BASE_URL}/forecasting/forecasting-scenarios/get-fiscal-volumes?userId=${userId}`
             );
 
             if (!response.ok) {
@@ -30,24 +28,86 @@ export default function FiscalVolumes() {
             }
 
             const result = await response.json();
-            console.log("Results : ", result.data);
+            console.log("Fetched Fiscal Volumes:", result.data);
 
-            if (!result.success || !result.data.length) {
-                console.warn("❌ No fiscal volume data found for user:", currentUser);
+            if (result.success && result.data.length) {
+                setFiscalVolumes(result.data);
             } else {
-                setFiscalVolums(result.data);
+                console.warn("❌ No fiscal volume data found for user:", userId);
             }
         } catch (err) {
-            console.error('Error fetching user fiscal volumes:', err);
+            console.error("Error fetching fiscal volumes:", err);
         }
     };
 
-    // ✅ Fetch on initial load
     useEffect(() => {
         fetchFiscalVolumes();
-    }, [navigate]);
+    }, []);
+
+    const saveUpdatedVolumes = async () => {
+        const userId = localStorage.getItem('user');
+        try {
+            const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/forecasting/forecasting-scenarios/update-supplied-volumes`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId, volumes: fiscalVolumes }),
+            });
+
+            const result = await response.json();
+            if (!result.success) {
+                alert("Failed to save volumes");
+            } else {
+                console.log("✅ Fiscal volumes updated");
+            }
+        } catch (err) {
+            console.error("Error updating volumes:", err);
+        }
+    };
 
 
+    // useEffect(() => {
+    //     const handleSaveAndClose = async (e) => {
+    //         if (e.key === 'saveAndClose' && e.newValue === 'true') {
+    //             await saveUpdatedVolumes();
+    //             alert('Fiscal volumes updated successfully!');
+    //             localStorage.setItem('saveAndClose', 'false');
+    //             navigate('/forecasting-forcasting-scenario');
+    //         }
+    //     };
+
+    //     window.addEventListener('storage', handleSaveAndClose);
+    //     return () => window.removeEventListener('storage', handleSaveAndClose);
+    // }, [fiscalVolumes]);
+
+
+    useEffect(() => {
+        if (triggerSave) {
+            (async () => {
+                alert('✅ Fiscal volumes updated successfully!');
+                await saveUpdatedVolumes();
+                resetSave();
+                navigate('/forecasting-forcasting-scenario');
+            })();
+        }
+    }, [triggerSave]);
+
+    const handlePaste = (e, startIndex) => {
+        e.preventDefault();
+        const clipboardData = e.clipboardData.getData('Text');
+        const pastedValues = clipboardData
+            .split(/\r?\n|\t/)
+            .map(val => val.trim())
+            .filter(val => val !== '');
+
+        const updated = [...fiscalVolumes];
+        const usableCount = Math.min(pastedValues.length, updated.length - startIndex);
+
+        for (let i = 0; i < usableCount; i++) {
+            updated[startIndex + i].supplied_volume = Number(pastedValues[i]) || 0;
+        }
+
+        setFiscalVolumes(updated);
+    };
 
     return (
         <div className='flex flex-col h-[91vh]'>
@@ -55,31 +115,30 @@ export default function FiscalVolumes() {
             {isVisible && (
                 <FiscalVolumesSelect
                     setVisible={setVisible}
-                    refreshFiscalVolumes={fetchFiscalVolumes} // ✅ pass it to child
+                    refreshFiscalVolumes={fetchFiscalVolumes}
                 />
             )}
 
-
-            {/* Fiscal Volumes navbar */}
+            {/* Top Nav Tabs */}
             <div className='bg-gradient-to-l font-thin to-blue-200 from-blue-100'>
                 <ul className='flex items-center group font-semibold text-sm px-1'>
-                    <li className='cursor-pointer px-2.5 py-1 bg-gray-200 border border-gray-300'>General</li>
-                    <li className='cursor-pointer px-2.5 py-1 bg-white border border-gray-300 border-b-0 '>Fiscal</li>
-                    <li className='cursor-pointer px-2.5 py-1 bg-gray-200 border border-gray-300'>Revenue</li>
-                    <li className='cursor-pointer px-2.5 py-1 bg-gray-200 border border-gray-300'>Cyclic</li>
-                    <li className='cursor-pointer px-2.5 py-1 bg-gray-200 border border-gray-300'>Intra-Day</li>
-                    <li className='cursor-pointer px-2.5 py-1 bg-gray-200 border border-gray-300'>Daily AHT</li>
-                    <li className='cursor-pointer px-2.5 py-1 bg-gray-200 border border-gray-300'>Service</li>
-                    <li className='cursor-pointer px-2.5 py-1 bg-gray-200 border border-gray-300'>Multi-Channel</li>
+                    {['General', 'Fiscal', 'Revenue', 'Cyclic', 'Intra-Day', 'Daily AHT', 'Service', 'Multi-Channel'].map((tab, i) => (
+                        <li
+                            key={i}
+                            className={`cursor-pointer px-2.5 py-1 border border-gray-300 ${tab === 'Fiscal' ? 'bg-white border-b-0' : 'bg-gray-200'}`}
+                        >
+                            {tab}
+                        </li>
+                    ))}
                 </ul>
             </div>
 
+            {/* Main Table + Side Buttons */}
             <div className="flex h-full overflow-hidden px-2">
                 <div className="flex flex-col w-full overflow-hidden border-x border-gray-700">
                     <div className="flex-1 overflow-auto">
-
-                        <table className="w-full table-auto border-collapse font-normal text-black shadow-gray-500 shadow-md border-x">
-                            <thead className='text-sm text-right'>
+                        <table className="w-full table-fixed border-collapse font-normal text-black shadow-gray-500 shadow-md border-x">
+                            <thead className='text-sm text-right top-0 sticky bg-white'>
                                 <tr>
                                     <th className="border-r p-1">Start Date</th>
                                     <th className="border-r p-1">Stop Date</th>
@@ -87,17 +146,23 @@ export default function FiscalVolumes() {
                                 </tr>
                             </thead>
                             <tbody className='font-semibold text-sm'>
-                                {(Array.isArray(FiscalVolumes) && FiscalVolumes.length > 0) ? (
-                                    FiscalVolumes.map((vol, index) => (
+                                {fiscalVolumes.length > 0 ? (
+                                    fiscalVolumes.map((vol, index) => (
                                         <tr key={index} className="bg-[#fffde7] hover:bg-blue-500 hover:text-white">
-                                            <td className="border border-[#d4d0c8] p-1">
-                                                {vol.start_date || 'N/A'}
-                                            </td>
-                                            <td className="border border-[#d4d0c8] p-1">
-                                                {vol.stop_date || 'N/A'}
-                                            </td>
+                                            <td className="border border-[#d4d0c8] p-1">{vol.start_date || 'N/A'}</td>
+                                            <td className="border border-[#d4d0c8] p-1">{vol.stop_date || 'N/A'}</td>
                                             <td className="border border-[#d4d0c8] p-1 text-right">
-                                                {vol.supplied_volume || 0}
+                                                <input
+                                                    type="text"
+                                                    value={vol.supplied_volume || ''}
+                                                    onChange={(e) => {
+                                                        const updated = [...fiscalVolumes];
+                                                        updated[index].supplied_volume = Number(e.target.value);
+                                                        setFiscalVolumes(updated);
+                                                    }}
+                                                    onPaste={(e) => handlePaste(e, index)}
+                                                    className="text-right bg-transparent outline-none"
+                                                />
                                             </td>
                                         </tr>
                                     ))
@@ -120,7 +185,7 @@ export default function FiscalVolumes() {
                                         colSpan={3}
                                         className="bg-gradient-to-tr text-left md:text-sm to-blue-400 from-blue-800 shadow-md text-white px-3 py-1 font-bold"
                                     >
-                                        0 of 239 Items Selected, 0 of 1 Columns Selected, 0 Cells Selected
+                                        0 of {fiscalVolumes.length} Items Selected, 0 of 1 Columns Selected, 0 Cells Selected
                                     </th>
                                 </tr>
                             </tfoot>
@@ -128,18 +193,23 @@ export default function FiscalVolumes() {
                     </div>
                 </div>
 
-
-                {/* <!-- Right side buttons --> */}
+                {/* Right-side Buttons */}
                 <div className="flex flex-col space-y-2 p-2 w-[10%]">
-                    <button className="bg-[#f1eee9] hover:border-blue-600 hover:border-2 border border-[#808080] rounded-sm px-2 py-1 text-[11px] font-normal text-black hover:bg-[#e0e0e0]"
-                        onClick={() => setVisible(true)}>
+                    <button
+                        className="bg-[#f1eee9] hover:border-blue-600 hover:border-2 border border-[#808080] rounded-sm px-2 py-1 text-[11px] font-normal text-black hover:bg-[#e0e0e0]"
+                        onClick={() => setVisible(true)}
+                    >
                         Select...
                     </button>
-                    <button className="bg-[#f1eee9] hover:border-blue-600 hover:border-2 border border-[#808080] rounded-sm px-2 py-1 text-[11px] font-normal text-black hover:bg-[#e0e0e0]">
+                    <button
+                        className="bg-[#f1eee9] hover:border-blue-600 hover:border-2 border border-[#808080] rounded-sm px-2 py-1 text-[11px] font-normal text-black hover:bg-[#e0e0e0]"
+                    >
                         Delete
                     </button>
                 </div>
-            </div >
-        </div >
-    )
+            </div>
+        </div>
+    );
 }
+
+

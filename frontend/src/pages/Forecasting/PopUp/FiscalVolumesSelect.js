@@ -55,11 +55,11 @@ export default function FiscalVolumesSelect({ setVisible, refreshFiscalVolumes }
             const result = await res.json();
 
             if (result.success) {
-                alert("Fiscal volumes saved successfully.");
+                alert("✅ Fiscal volumes added successfully.");
                 refreshFiscalVolumes();
                 setVisible(false);
             } else {
-                alert("Error: " + result.message);
+                alert("❌" + result.message);
             }
         } catch (err) {
             console.error("Failed to save:", err);

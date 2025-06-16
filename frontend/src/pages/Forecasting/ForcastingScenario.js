@@ -248,8 +248,8 @@ export default function ForcastingScenario() {
                                                             <td className="px-2 py-1 text-sm border-2 border-gray-200">{scenario.Forecasting_Basis}</td>
                                                             <td className="px-2 py-1 text-sm border-2 border-gray-200">{scenario.Staffing_Basis}</td>
                                                             <td className="px-2 py-1 text-sm border-2 border-gray-200">{scenario.Multi_Channel_Staffing_Basis}</td>
-                                                            <td className="px-2 py-1 text-sm border-2 border-gray-200">{scenario.Fiscal_Calendar}</td>
-                                                            <td className="px-2 py-1 text-sm border-2 border-gray-200">{scenario.Updated_By}</td>
+                                                            <td className="px-2 py-1 text-sm border-2 border-gray-200 uppercase">{scenario.Fiscal_Calendar}</td>
+                                                            <td className="px-2 py-1 text-sm border-2 border-gray-200 uppercase">{scenario.Updated_By}</td>
                                                             <td className="px-2 py-1 text-sm border-2 border-gray-200">{scenario.Updated_On}</td>
                                                         </tr>
                                                     );
